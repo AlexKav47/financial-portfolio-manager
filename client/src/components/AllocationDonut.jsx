@@ -1,4 +1,4 @@
-import { Box, Heading, Text } from "@chakra-ui/react";
+import { Heading, Text } from "@chakra-ui/react";
 import { PieChart, Pie, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import Card from "./Card";
 
