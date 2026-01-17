@@ -3,6 +3,7 @@ import Transaction from "../models/transaction.js";
 function computeCashFlow(body) {
   const { kind } = body;
 
+  // Cash Movements
   if (kind === "deposit") {
     const amt = Number(body.amount);
     if (!Number.isFinite(amt) || amt <= 0) throw new Error("Deposit amount must be > 0");
@@ -26,17 +27,26 @@ function computeCashFlow(body) {
 
   const gross = qty * price;
 
+  // Buying: You pay the price PLUS the fees 
   if (kind === "buy") return -(gross + fees);
+  
+  // Selling: You get the price MINUS the fees 
   if (kind === "sell") return +(gross - fees);
 
   throw new Error("Invalid transaction kind");
 }
 
+/**
+ * Fetch the users transaction history, newest first
+ */
 export async function listTransactions(req, res) {
   const tx = await Transaction.find({ userId: req.userId }).sort({ date: -1 });
   res.json(tx);
 }
 
+/**
+ * Validate data and save the transaction
+ */
 export async function createTransaction(req, res) {
   try {
     const { kind, assetType, symbol, quantity, price, fees, amount, date } = req.body;
@@ -72,6 +82,9 @@ export async function createTransaction(req, res) {
   }
 }
 
+/**
+ * Remove a record from history
+ */
 export async function deleteTransaction(req, res) {
   const deleted = await Transaction.findOneAndDelete({ _id: req.params.id, userId: req.userId });
   if (!deleted) return res.status(404).json({ message: "Transaction not found" });

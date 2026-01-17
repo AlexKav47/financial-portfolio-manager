@@ -1,5 +1,8 @@
 import mongoose from "mongoose";
 
+/**
+ * Defines the structure of an investment record
+ */
 const holdingSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
@@ -11,6 +14,10 @@ const holdingSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+/**
+ * This prevents a user from having two separate AAPL rows
+ * If they buy more, the app should update the existing row, not create a duplicate
+ */
 holdingSchema.index({ userId: 1, type: 1, symbol: 1 }, { unique: true });
 
 export default mongoose.model("Holding", holdingSchema);

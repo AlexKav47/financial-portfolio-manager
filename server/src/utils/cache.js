@@ -1,7 +1,7 @@
 const store = new Map();
 
 /**
- * Get cached value if not expired.
+ * Get cached value if not expired
  */
 export function cacheGet(key) {
   const entry = store.get(key);
@@ -14,7 +14,7 @@ export function cacheGet(key) {
 }
 
 /**
- * Set cached value with TTL in ms.
+ * Set cached value with TTL in ms
  */
 export function cacheSet(key, value, ttlMs) {
   store.set(key, { value, expiresAt: Date.now() + ttlMs });

@@ -2,7 +2,7 @@ import { cacheGet, cacheSet } from "../utils/cache.js";
 
 const TTL_MS = 60_000; // 1 minute cache
 
-// Minimal symbol->id fallback map (covers common cases)
+// Minimal symbol->id fallback map covers common cases
 const SYMBOL_TO_ID = {
   BTC: "bitcoin",
   ETH: "ethereum",
@@ -12,7 +12,7 @@ const SYMBOL_TO_ID = {
   DOGE: "dogecoin",
 };
 
-// Resolve a symbol to a CoinGecko id (best effort)
+// Resolve a symbol to a CoinGecko id
 async function resolveCoinGeckoId(symbol) {
   const upper = String(symbol).toUpperCase();
 

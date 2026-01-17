@@ -1,16 +1,27 @@
 import { SimpleGrid, Box, Text, Heading } from "@chakra-ui/react";
 import Card from "./Card";
 
+/**
+ * Helper to turn numbers into currency strings (1200 -> €1,200.00)
+ */
 function formatMoney(n, currency = "EUR") {
   if (n == null || Number.isNaN(n)) return "—";
   return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(n);
 }
 
+/**
+ * Helper to format numbers as percentages (0.05 -> 5.00%)
+ */
 function formatPct(n) {
   if (n == null || Number.isNaN(n)) return "—";
   return `${n.toFixed(2)}%`;
 }
 
+/**
+ * Sub Component
+ * Builds the visual tile
+ * Different colors bg and text
+ */
 function KpiCard({ label, value, sub, bg }) {
   return (
     <Card
@@ -40,6 +51,10 @@ function KpiCard({ label, value, sub, bg }) {
   );
 }
 
+/**
+ * Main Component 
+ * Takes the summary data from the backend and maps it into 4 specific cards.
+ */
 export default function KpiCards({ summary }) {
   const currency = summary?.currency || "EUR";
 
@@ -49,7 +64,7 @@ export default function KpiCards({ summary }) {
 
   const irrPct = summary?.irrAnnualPct ?? null;
 
-  // Placeholder until Income is implemented properly
+  // Placeholder for future logic to track dividends and interest
   const passiveIncome = summary?.passiveIncomeTotal ?? null;
 
   return (

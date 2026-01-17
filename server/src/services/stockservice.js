@@ -15,7 +15,7 @@ export async function getStockPrices(symbols) {
     else toFetch.push(symbol);
   }
 
-  // Fetch sequentially to be safe with rate limits; we can parallelise later.
+  // Fetch sequentially to be safe with rate limits; we can parallelise later
   for (const symbol of toFetch) {
     try {
       const quote = await yahooFinance.quote(symbol);
@@ -27,5 +27,5 @@ export async function getStockPrices(symbols) {
     }
   }
 
-  return results; // { AAPL: 123.45, ... }
+  return results; // AAPL: 123.45,
 }

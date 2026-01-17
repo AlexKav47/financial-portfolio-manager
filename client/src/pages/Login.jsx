@@ -7,6 +7,10 @@ export default function Login({ onLogin }) {
   const [password, setPassword] = useState("password123");
   const [error, setError] = useState("");
 
+  /**
+   * Submits credentials to the backend
+   * If successful, it stores the token and flips the authed switch in the parent
+   */
   async function handleLogin() {
     setError("");
     try {

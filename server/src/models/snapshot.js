@@ -1,5 +1,8 @@
 import mongoose from "mongoose";
 
+/**
+ * The schema of the total wealth at a specific moment in time
+ */
 const snapshotSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },

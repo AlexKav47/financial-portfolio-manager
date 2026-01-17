@@ -3,6 +3,9 @@ import {Box,Button,Flex,Heading,Input,InputGroup,InputLeftElement,Select,Table,T
 import { SearchIcon } from "@chakra-ui/icons";
 import Card from "./Card";
 
+/** * Local helpers for printing numbers. 
+ * Intl.NumberFormat handles currency symbols and decimal places automatically.
+ */
 function formatMoney(n, currency = "EUR") {
   if (n == null || Number.isNaN(n)) return "—";
   return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(n);
@@ -13,20 +16,21 @@ function formatPct(n) {
   return `${n.toFixed(2)}%`;
 }
 
-/**
- * holdings rows expected from /portfolio/summary:
- * { _id, type, symbol, quantity, avgCost, costBasis, currentValue, pnl, allocationPct, ... }
- */
 export default function HoldingsTableCard({
-  title = "Cash", // change to "Holdings" if you prefer
+  title = "Cash", 
   holdings = [],
   currency = "EUR",
-  onDelete, // optional (id) => Promise
+  onDelete,
 }) {
+  // State for table controls (search, filter, sort)
   const [query, setQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all"); // all|stock|crypto
-  const [sortBy, setSortBy] = useState("value_desc"); // value_desc|alloc_desc|pnl_desc|symbol_asc
+  const [typeFilter, setTypeFilter] = useState("all"); 
+  const [sortBy, setSortBy] = useState("value_desc"); 
 
+  /**
+   * Filter and Sort Logic
+   * useMemo only reruns when the data or filters change
+   */
   const filtered = useMemo(() => {
     const q = query.trim().toUpperCase();
 
@@ -50,6 +54,10 @@ export default function HoldingsTableCard({
     return [...rows].sort(sorters[sortBy] || sorters.value_desc);
   }, [holdings, query, typeFilter, sortBy]);
 
+  /**
+   * Total Calculation
+   * Sums up the bottom Total row based only on the currently filtered view
+   */
   const totals = useMemo(() => {
     const totalCost = filtered.reduce((acc, h) => acc + (h.costBasis || 0), 0);
     const totalValue = filtered.reduce((acc, h) => acc + (h.currentValue || 0), 0);
@@ -59,12 +67,13 @@ export default function HoldingsTableCard({
 
   return (
     <Card p={0}>
-      {/* Header + controls */}
+      {/* Toolbar Section */}
       <Box px={5} pt={4} pb={3} borderBottom="1px solid" borderColor="gray.200">
         <Flex align="center" gap={3} wrap="wrap">
           <Heading size="sm">{title}</Heading>
           <Spacer />
 
+          {/* Search Box */}
           <InputGroup maxW="240px" size="sm">
             <InputLeftElement pointerEvents="none">
               <SearchIcon />
@@ -76,6 +85,7 @@ export default function HoldingsTableCard({
             />
           </InputGroup>
 
+          {/* Category Dropdown */}
           <Select
             size="sm"
             maxW="170px"
@@ -87,6 +97,7 @@ export default function HoldingsTableCard({
             <option value="crypto">Crypto</option>
           </Select>
 
+          {/* Sort Dropdown */}
           <Select
             size="sm"
             maxW="190px"
@@ -105,7 +116,7 @@ export default function HoldingsTableCard({
         </Flex>
       </Box>
 
-      {/* Table */}
+      {/* Table Section */}
       <Box px={5} pb={4} pt={3} overflowX="auto">
         <Table size="sm">
           <Thead>
@@ -125,7 +136,6 @@ export default function HoldingsTableCard({
           <Tbody>
             {filtered.map((h) => (
               <Tr key={h._id}>
-                {/* Currency column in your mock: use Symbol */}
                 <Td>
                   <Text fontWeight="600">{h.symbol}</Text>
                   <Text fontSize="xs" color="gray.500">
@@ -143,7 +153,7 @@ export default function HoldingsTableCard({
                 <Td isNumeric>{formatMoney(h.currentValue, currency)}</Td>
                 <Td isNumeric>{formatMoney(h.pnl, currency)}</Td>
 
-                {/* Per-asset IRR not implemented yet */}
+                {/* Per asset IRR not implemented yet */}
                 <Td isNumeric>—</Td>
 
                 <Td isNumeric>{formatPct(h.allocationPct)}</Td>

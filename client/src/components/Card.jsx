@@ -1,5 +1,8 @@
 import { Box } from "@chakra-ui/react";
 
+/**
+ * Universal wrapper component
+ */
 export default function Card({ children, ...props }) {
   return (
     <Box

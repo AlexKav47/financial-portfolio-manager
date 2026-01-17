@@ -1,16 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../services/api";
-import {
-  Box,
-  Button,
-  Heading,
-  Input,
-  Select,
-  Stack,
-  Text,
-  Grid,
-  GridItem,
-} from "@chakra-ui/react";
+import { Box, Button,Heading, Input, Select, Stack, Text, Grid, GridItem, } from "@chakra-ui/react";
 
 import KpiCards from "../components/KpiCards";
 import Card from "../components/Card";
@@ -21,8 +11,8 @@ import HoldingsTableCard from "../components/HoldingsTableCard";
 import PortfolioTrackerCard from "../components/PortfolioTrackerCard";
 
 export default function Dashboard({ onLogout }) {
-  const [summary, setSummary] = useState(null);
-  const [snapshots, setSnapshots] = useState([]);
+  const [summary, setSummary] = useState(null);               // Main Portfolio data
+  const [snapshots, setSnapshots] = useState([]);             // Historical data for charts
   const [loadingSummary, setLoadingSummary] = useState(true);
   const [error, setError] = useState("");
 
@@ -34,6 +24,8 @@ export default function Dashboard({ onLogout }) {
 
   const currency = summary?.currency || "EUR";
 
+  // API Logic
+  // Fetches the latest calculated portfolio stats PnL, Value
   async function loadSummary() {
     setLoadingSummary(true);
     setError("");
@@ -47,25 +39,28 @@ export default function Dashboard({ onLogout }) {
     }
   }
 
+  // Fetches the last 90 days of value history for the line chart
   async function loadSnapshots() {
     try {
       const res = await api.get("/snapshots?days=90");
       setSnapshots(res.data);
     } catch {
-      // optional UI; keep silent
+      // If snapshots fails, dont show the chart
     }
   }
 
+  // Saves the current total value to the database history
   async function takeSnapshot() {
     setError("");
     try {
       await api.post("/snapshots");
-      await loadSnapshots();
+      await loadSnapshots(); // Refresh the chart after taking a new point
     } catch (e) {
       setError(e?.response?.data?.message || "Failed to take snapshot");
     }
   }
 
+  // Sends a new asset Stock or Crypto to the backend
   async function addHolding() {
     setError("");
     try {
@@ -75,22 +70,24 @@ export default function Dashboard({ onLogout }) {
         quantity: Number(quantity),
         avgCost: Number(avgCost),
       });
-      await loadSummary();
+      await loadSummary(); // Refresh dashbaord
     } catch (e) {
       setError(e?.response?.data?.message || "Failed to add holding");
     }
   }
 
+  // Deletes an asset by its Database ID
   async function removeHolding(id) {
     setError("");
     try {
       await api.delete(`/holdings/${id}`);
-      await loadSummary();
+      await loadSummary(); // Refresh dashbaord
     } catch (e) {
       setError(e?.response?.data?.message || "Failed to delete holding");
     }
   }
 
+  // Initial loading of dashboard
   useEffect(() => {
     loadSummary();
     loadSnapshots();
@@ -98,7 +95,7 @@ export default function Dashboard({ onLogout }) {
 
   return (
     <Box>
-      {/* Page header */}
+      {/* Refresh and Logout */}
       <Stack
         direction={{ base: "column", md: "row" }}
         align={{ base: "stretch", md: "center" }}
@@ -110,10 +107,15 @@ export default function Dashboard({ onLogout }) {
           <Button onClick={loadSummary} isLoading={loadingSummary}>
             Refresh
           </Button>
-          <Button
-            onClick={() => {
-              localStorage.removeItem("token");
-              onLogout();
+            <Button
+            onClick={async () => {
+              try {
+                await api.post("/auth/logout"); 
+              } catch (err) {
+                console.error("Logout failed on server", err);
+              } finally {
+                onLogout(); 
+              }
             }}
           >
             Logout
@@ -127,10 +129,10 @@ export default function Dashboard({ onLogout }) {
         </Box>
       )}
 
-      {/* KPI cards (wireframe row) */}
+      {/* KPI cards */}
       <KpiCards summary={summary} />
 
-      {/* Portfolio block (donut left + table right) */}
+      {/* Portfolio block donut and table */}
       <Grid mt={6} templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={4}>
         <GridItem>
             <AllocationDonut holdings={summary?.holdings || []} currency={currency} />
@@ -141,7 +143,7 @@ export default function Dashboard({ onLogout }) {
         </GridItem>
       </Grid>
 
-      {/* Value history block (card) */}
+      {/* Value history */}
       <Box mt={6}>
         <Card>
           <Stack
@@ -161,7 +163,7 @@ export default function Dashboard({ onLogout }) {
         </Card>
       </Box>
 
-      {/* Add holding block (card) */}
+      {/* Add holding */}
       <Box mt={6}>
         <Card>
           <Heading size="md">Add Holding</Heading>
@@ -205,7 +207,7 @@ export default function Dashboard({ onLogout }) {
         </Card>
       </Box>
 
-      {/* Holdings / Cash block (large card with controls) */}
+      {/* Holdings / Cash block */}
       <Box mt={6}>
         <HoldingsTableCard
           title="Cash"

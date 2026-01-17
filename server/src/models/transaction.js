@@ -10,7 +10,7 @@ const transactionSchema = new mongoose.Schema(
       required: true,
     },
 
-    // Asset fields (only relevant for buy/sell)
+    // Asset fields only relevant for buy and sell
     assetType: { type: String, enum: ["stock", "crypto"], default: null },
     symbol: { type: String, default: null, trim: true },
 
@@ -18,11 +18,11 @@ const transactionSchema = new mongoose.Schema(
     price: { type: Number, default: null, min: 0 },
     fees: { type: Number, default: 0, min: 0 },
 
-    // Direct cash flow amount (for deposit/withdrawal) in EUR
+    // Direct cash flow amount for deposit or withdrawal in EUR
     amount: { type: Number, default: null },
 
-    // Canonical cash flow used for IRR (computed at creation time)
-    // Convention: negative = money invested, positive = money received
+    // Canonical cash flow used for IRR computed at creation time
+    // Convention negative = money invested, positive = money received
     cashFlow: { type: Number, required: true },
 
     date: { type: Date, required: true },

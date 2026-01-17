@@ -20,7 +20,7 @@ function dxnpv(rate, cashflows) {
 
 /**
  * XIRR via Newton-Raphson with guardrails.
- * Returns annual rate as decimal (e.g. 0.12 = 12%), or null if not computable.
+ * Returns annual rate as decimal 0.12 = 12%, or null if not computable
  */
 export function xirr(cashflows) {
   if (!Array.isArray(cashflows) || cashflows.length < 2) return null;
