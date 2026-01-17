@@ -36,7 +36,7 @@ export async function register(req, res) {
     const existing = await User.findOne({ email: email.toLowerCase() });
     if (existing) return res.status(409).json({ message: "Email already exists" });
 
-    // Hash the password: Never store raw passwords in the database!
+    // Hash the password Never store raw passwords in the database!
     const passwordHash = await bcrypt.hash(password, 12);
     const user = await User.create({ email: email.toLowerCase(), passwordHash });
 
