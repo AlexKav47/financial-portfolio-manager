@@ -17,7 +17,7 @@ export default function AllocationDonut({ holdings = [], currency = "EUR" }) {
   const data = holdings
     .filter((h) => h.currentValue != null && h.currentValue > 0)
     .map((h) => ({
-      name: `${h.symbol} (${h.type})`, // Ticker "BTC (Crypto)"
+      name: `${h.symbol} (${h.type})`, // Ticker BTC Crypto
       value: h.currentValue,           // Size of Slice
       allocationPct: h.allocationPct,  // Stored here to show it in tooltip
     }));

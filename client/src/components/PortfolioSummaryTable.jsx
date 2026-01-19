@@ -55,7 +55,7 @@ export default function PortfolioSummaryTable({ holdings = [], currency = "EUR" 
 
               {/* Total PnL for this specific asset */}
               <Td isNumeric>{formatMoney(h.pnl, currency)}</Td>
-              {/* How much of your total pie this asset takes up */}
+              {/* How much total pie this asset takes up */}
               <Td isNumeric>{formatPct(h.allocationPct)}</Td>
             </Tr>
           ))}

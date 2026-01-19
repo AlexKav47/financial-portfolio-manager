@@ -26,7 +26,7 @@ function KpiCard({ label, value, sub, bg }) {
   return (
     <Card
       bg={bg}
-      color="white"
+      color="black"
       borderRadius="lg"
       px={5}
       py={4}
@@ -73,28 +73,28 @@ export default function KpiCards({ summary }) {
         label="Value (€)"
         value={formatMoney(totalValue, currency)}
         sub="Live portfolio value"
-        bg="teal.400"
+        bg="white.400"
       />
 
       <KpiCard
         label="Total Profit (€)"
         value={formatMoney(totalPnl, currency)}
         sub={`Return: ${formatPct(totalPnlPct)}`}
-        bg="orange.400"
+        bg="white.400"
       />
 
       <KpiCard
         label="IRR"
         value={irrPct == null ? "—" : `${irrPct.toFixed(2)}%`}
         sub="Money-weighted return"
-        bg="pink.400"
+        bg="white.400"
       />
 
       <KpiCard
         label="Passive Income (€)"
         value={formatMoney(passiveIncome, currency)}
         sub="Dividends/interest (coming next)"
-        bg="purple.400"
+        bg="white.400"
       />
     </SimpleGrid>
   );

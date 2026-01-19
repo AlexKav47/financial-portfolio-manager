@@ -1,8 +1,9 @@
 import { cacheGet, cacheSet } from "../utils/cache.js";
 
-const TTL_MS = 60_000; // 1 minute cache
+// Duration to persist historical daily prices in the local cache
+const PRICE_TTL_MS = 24 * 60 * 60 * 1000;
 
-// Minimal symbol->id fallback map covers common cases
+// Static lookup table for immediate resolution of high-volume assets
 const SYMBOL_TO_ID = {
   BTC: "bitcoin",
   ETH: "ethereum",
@@ -12,76 +13,107 @@ const SYMBOL_TO_ID = {
   DOGE: "dogecoin",
 };
 
-// Resolve a symbol to a CoinGecko id
-async function resolveCoinGeckoId(symbol) {
+// Convert asset symbols into unique CoinGecko identifiers via static map or API search
+export async function resolveCoinGeckoId(symbol) {
   const upper = String(symbol).toUpperCase();
-
   if (SYMBOL_TO_ID[upper]) return SYMBOL_TO_ID[upper];
 
-  // Cache resolution results
   const key = `cg:resolve:${upper}`;
   const cached = cacheGet(key);
   if (cached) return cached;
 
-  // CoinGecko search endpoint
   const url = `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(upper)}`;
-  const res = await fetch(url);
-  if (!res.ok) return null;
-  const data = await res.json();
+  try {
+    const res = await fetch(url, { headers: { accept: "application/json" } });
+    if (!res.ok) return null;
 
-  const first = data?.coins?.[0];
-  const id = first?.id ?? null;
+    const data = await res.json();
+    const first = data?.coins?.[0];
+    const id = first?.id ?? null;
 
-  if (id) cacheSet(key, id, 24 * 60 * 60 * 1000); // cache 24h
-  return id;
+    if (id) cacheSet(key, id, 24 * 60 * 60 * 1000);
+    return id;
+  } catch {
+    return null;
+  }
 }
 
+// Retrieve the most recent daily data point from the market chart endpoint
+async function fetchLastDailyFromMarketChart(cgId) {
+  const url = `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(
+    cgId
+  )}/market_chart?vs_currency=eur&days=30`;
+
+  const res = await fetch(url, { headers: { accept: "application/json" } });
+  if (!res.ok) {
+    // Return null on failure to allow the orchestration layer to handle missing data
+    return null;
+  }
+
+  const data = await res.json();
+  const prices = data?.prices; // Expects array of [timestamp, price] pairs
+  if (!Array.isArray(prices) || prices.length === 0) return null;
+
+  const last = prices[prices.length - 1];
+  const price = Array.isArray(last) ? Number(last[1]) : null;
+
+  return Number.isFinite(price) ? price : null;
+}
+
+// Batch processor for fetching multiple crypto prices with built-in concurrency limiting
+export async function getLastDailyCryptoPrices(cgIds = []) {
+  const out = {};
+  const unique = [...new Set((cgIds || []).map((id) => String(id)).filter(Boolean))];
+
+  const toFetch = [];
+  for (const id of unique) {
+    const key = `cg:lastdaily:${id}`;
+    const cached = cacheGet(key);
+    if (cached != null) out[id] = cached;
+    else toFetch.push(id);
+  }
+
+  // Limit simultaneous outgoing requests to prevent IP-based rate limiting
+  const CONCURRENCY = 3;
+  let idx = 0;
+
+  async function worker() {
+    while (idx < toFetch.length) {
+      const id = toFetch[idx++];
+      const key = `cg:lastdaily:${id}`;
+
+      try {
+        const price = await fetchLastDailyFromMarketChart(id);
+        out[id] = price;
+        cacheSet(key, price, PRICE_TTL_MS);
+      } catch {
+        out[id] = null;
+      }
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, toFetch.length) }, worker));
+  return out;
+}
+
+// Orchestrator to map diverse holdings to CoinGecko IDs and fetch corresponding prices
 export async function getCryptoPrices(holdings) {
-  // holdings: [{ symbol, cgId? }]
   const ids = [];
 
-  for (const h of holdings) {
-    const cgId = h.cgId ? String(h.cgId) : null;
+  for (const h of holdings || []) {
+    const cgId = h?.cgId ? String(h.cgId) : null;
     if (cgId) ids.push(cgId);
     else {
-      const id = await resolveCoinGeckoId(h.symbol);
+      const id = await resolveCoinGeckoId(h?.symbol);
       if (id) ids.push(id);
     }
   }
 
   const uniqueIds = [...new Set(ids)];
-  const results = {};
-
-  // Try cache first
-  const uncached = [];
-  for (const id of uniqueIds) {
-    const key = `crypto:${id}`;
-    const cached = cacheGet(key);
-    if (cached != null) results[id] = cached;
-    else uncached.push(id);
-  }
-
-  if (uncached.length) {
-    const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(
-      uncached.join(",")
-    )}&vs_currencies=eur`;
-
-    const res = await fetch(url);
-    if (res.ok) {
-      const data = await res.json(); // { bitcoin: { eur: 123 }, ... }
-      for (const id of uncached) {
-        const price = data?.[id]?.eur ?? null;
-        results[id] = price;
-        cacheSet(`crypto:${id}`, price, TTL_MS);
-      }
-    } else {
-      for (const id of uncached) results[id] = null;
-    }
-  }
-
-  return results; // { bitcoin: 42000, ethereum: 2300, ... } in EUR
+  return getLastDailyCryptoPrices(uniqueIds);
 }
 
+// Helper utility to retrieve the specific CoinGecko API identifier for a given holding
 export async function getCoinGeckoIdForHolding(h) {
-  return h.cgId ? String(h.cgId) : await resolveCoinGeckoId(h.symbol);
+  return h?.cgId ? String(h.cgId) : await resolveCoinGeckoId(h?.symbol);
 }

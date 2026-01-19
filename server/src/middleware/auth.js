@@ -17,7 +17,7 @@ export function requireAuth(req, res, next) {
     const payload = jwt.verify(token, secret);
     
     // Takes the users ID out of the token and puts it onto the req object
-    // Allows the next function to know exactly WHICH user is asking for data
+    // Allows the next function to know exactly which user is asking for data
     req.userId = payload.sub; 
     return next();
   } catch (err) {
